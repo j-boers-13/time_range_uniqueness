@@ -102,7 +102,7 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at [https://github.com/your_username/time_range_uniqueness](https://github.com/j-boers-13/time_range_uniqueness)
+Bug reports and pull requests are welcome on GitHub at [https://github.com/j-boers-13/time_range_uniqueness](https://github.com/j-boers-13/time_range_uniqueness)
 
 ## License
 
