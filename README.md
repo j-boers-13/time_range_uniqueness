@@ -1,6 +1,8 @@
-# TimeRangeUniqueness
+# time_range_uniqueness
 
-**TimeRangeUniqueness** is a Ruby gem that provides ActiveRecord migrations and model validation to ensure that time ranges do not overlap within a table. It adds support for creating exclusion constraints on PostgreSQL `tstzrange` columns and validates the uniqueness of time ranges in models.
+**time_range_uniqueness** is a Ruby gem that provides ActiveRecord migrations and model validation to ensure that time ranges do not overlap within a table. 
+
+It adds support for creating exclusion constraints on PostgreSQL `tstzrange` columns and validates the uniqueness of time ranges in models.
 
 ## Features
 
