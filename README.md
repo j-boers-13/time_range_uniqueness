@@ -36,17 +36,6 @@ gem install time_range_uniqueness
 
 In your migrations, you can use the `add_time_range_uniqueness` method to add a time range column with an exclusion constraint. This will prevent overlapping time ranges in your table.
 
-```ruby
-class AddEventTimeRangeUniqueness < ActiveRecord::Migration[6.1]
-  def change
-    add_time_range_uniqueness :events,
-      with: :event_time_range,
-      scope: :event_name, # Optional scope
-      name: 'unique_event_time_ranges' # Optional custom constraint name
-  end
-end
-```
-
 #### Options:
 - `with`: **(Required)** The name of the column that stores the time range.
 - `scope`: **(Optional)** An array of columns to scope the uniqueness check (e.g., `:event_name`).
@@ -58,7 +47,10 @@ end
 ```ruby
 class AddEventTimeRangeUniqueness < ActiveRecord::Migration[6.1]
   def change
-    add_time_range_uniqueness :events, with: :event_time_range, scope: :event_name
+    add_time_range_uniqueness :events,
+                              with: :event_time_range,
+                              scope: :event_name, # Optional scope
+                              name: 'unique_event_time_ranges' # Optional custom constraint name
   end
 end
 ```
@@ -69,26 +61,20 @@ This example ensures that the `event_time_range` column in the `events` table is
 
 The gem also provides model-level validation to ensure time ranges do not overlap. You can include this validation in your models like this:
 
-```ruby
-class Event < ApplicationRecord
-  validates_time_range_uniqueness(
-    with: :event_time_range,
-    scope: :event_name,
-    message: 'cannot overlap with an existing event'
-  )
-end
-```
-
 #### Options:
 - `with`: **(Required)** The name of the time range column to validate.
 - `scope`: **(Optional)** An array of columns to scope the uniqueness check (e.g., `:event_name`).
 - `message`: **(Optional)** A custom error message when validation fails (default: `'overlaps with an existing record'`).
 
-### Example
+#### Examples:
 
 ```ruby
-class Event < ApplicationRecord
-  validates_time_range_uniqueness with: :event_time_range, scope: :event_name
+class Event < ActiveRecord::Base
+  validates_time_range_uniqueness(
+    with: :event_time_range,
+    scope: :event_name,
+    message: 'cannot overlap with an existing event'
+  )
 end
 ```
 
