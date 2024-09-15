@@ -40,7 +40,6 @@ In your migrations, you can use the `add_time_range_uniqueness` method to add a 
 - `with`: **(Required)** The name of the column that stores the time range.
 - `scope`: **(Optional)** An array of columns to scope the uniqueness check (e.g., `:event_name`).
 - `name`: **(Optional)** The name of the exclusion constraint. If not provided, a default name is generated.
-- `column_type`: The time range column type will always be `tstzrange`.
 
 ### Example
 

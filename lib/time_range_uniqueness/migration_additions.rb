@@ -14,7 +14,6 @@ module TimeRangeUniqueness
   #       add_time_range_uniqueness :events,
   #         with: :event_time_range,
   #         scope: :event_name,
-  #         column_type: :tstzrange,
   #         name: 'unique_event_time_ranges'
   #     end
   #   end
@@ -23,7 +22,6 @@ module TimeRangeUniqueness
   #
   # * +:with+ - The name of the column that stores the time range (required).
   # * +:scope+ - (Optional) An array of columns to scope the uniqueness check.
-  # * +:column_type+ - (Optional) The type of the time range column (default: :tstzrange).
   # * +:name+ - (Optional) The name of the constraint.
   #
   # == Methods
@@ -40,7 +38,6 @@ module TimeRangeUniqueness
     # @param options [Hash] The options for the constraint.
     # @option options [Symbol] :with The name of the time range column.
     # @option options [Array<Symbol>] :scope (Optional) Columns to scope the uniqueness check.
-    # @option options [Symbol] :column_type (Optional) The type of the time range column (default: :tstzrange).
     # @option options [String] :name (Optional) The name of the constraint.
     def add_time_range_uniqueness(table, options = {})
       time_range_column = options[:with] || :time_range
