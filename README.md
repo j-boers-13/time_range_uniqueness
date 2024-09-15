@@ -78,7 +78,7 @@ class Event < ActiveRecord::Base
 end
 ```
 
-This example ensures that the `event_time_range` in the `Event` model does not overlap with other events with the same `event_name`.
+This example ensures that the `event_time_range` in the `Event` model does not overlap with other events with the same `event_name` and will display the message `cannot overlap with an existing event` when it does.
 
 ### PostgreSQL Requirements
 
