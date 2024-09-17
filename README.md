@@ -4,8 +4,6 @@
 
 It adds support for creating exclusion constraints on PostgreSQL `tstzrange` columns and validates the uniqueness of time ranges in models.
 
-## Specs
-
 [![rspec](https://github.com/j-boers-13/time_range_uniqueness/actions/workflows/ci.yml/badge.svg)](https://github.com/j-boers-13/time_range_uniqueness/actions/workflows/ci.yml)
 
 ## Features
