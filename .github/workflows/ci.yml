@@ -65,10 +65,5 @@ jobs:
           psql -h $DB_HOST -U $DB_USERNAME -c "CREATE DATABASE $DB_NAME;" || echo "Database already exists"
 
       - name: Run RSpec tests
-        env:
-          DB_NAME: $DB_NAME
-          DB_USERNAME: $DB_USERNAME
-          DB_PASSWORD: $DB_PASSWORD
-          DB_HOST: $DB_HOST
         run: |
           bundle exec rspec
