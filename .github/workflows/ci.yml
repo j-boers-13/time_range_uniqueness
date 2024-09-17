@@ -1,0 +1,74 @@
+name: rspec
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: time_range_uniqueness_test
+
+        ports:
+          - 5432:5432
+
+        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    env:
+      DB_NAME: time_range_uniqueness_test
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+
+    strategy:
+      matrix:
+        ruby-version: [ 3.1, 3.2, 3.3 ] # Specify Ruby versions to test against
+
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y google-chrome-stable curl libjemalloc2 libvips postgresql-client libpq-dev
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Install dependencies
+        run: |
+          gem install bundler
+          bundle install --jobs 4 --retry 3
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h $DB_HOST -p 5432; do
+            echo "Waiting for PostgreSQL..."
+            sleep 1
+          done
+
+      - name: Set up Database
+        env:
+          PGPASSWORD: $DB_PASSWORD
+        run: |
+          # Create the test database if it doesn't exist
+          psql -h $DB_HOST -U $DB_USERNAME -c "CREATE DATABASE $DB_NAME;" || echo "Database already exists"
+
+      - name: Run RSpec tests
+        env:
+          DB_NAME: $DB_NAME
+          DB_USERNAME: $DB_USERNAME
+          DB_PASSWORD: $DB_PASSWORD
+          DB_HOST: $DB_HOST
+        run: |
+          bundle exec rspec
