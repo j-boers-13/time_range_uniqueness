@@ -47,7 +47,7 @@ module TimeRangeUniqueness
     # @option options [Array<Symbol>] :scope (Optional) Columns to scope the uniqueness check.
     # @option options [String] :name (Optional) The name of the constraint.
     def add_time_range_uniqueness(table, options = {})
-      raise ArgumentError, 'You must specify the :with option with the time range column name' unless options[:with]
+      validate_options!(options)
 
       time_range_column = options[:with]
       scope_columns = Array(options[:scope])
@@ -60,6 +60,19 @@ module TimeRangeUniqueness
     end
 
     private
+
+    # Validates the options passed to +add_time_range_uniqueness+.
+    #
+    # @param options [Hash] The options for the constraint.
+    # @raise [ArgumentError] If +:with+ is missing or +:name+ exceeds the identifier limit.
+    def validate_options!(options)
+      raise ArgumentError, 'You must specify the :with option with the time range column name' unless options[:with]
+
+      name = options[:name]
+      return unless name && name.to_s.length > MAX_IDENTIFIER_LENGTH
+
+      raise ArgumentError, "The :name option exceeds the #{MAX_IDENTIFIER_LENGTH}-character identifier limit"
+    end
 
     # Applies the changes for the up migration.
     #

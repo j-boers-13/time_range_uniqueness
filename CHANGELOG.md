@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+## [1.0.1] - 2026-05-31
+
+- Fix the overlap validation to treat a `NULL` scope value as never-conflicting, matching
+  the exclusion constraint (`NULL = NULL` is never true in PostgreSQL). Previously the
+  validation reported a false overlap for rows the database would accept.
+- Support models with a composite primary key in the overlap validation. Previously the
+  validation raised `ArgumentError` when excluding the current record, so such models
+  could not be validated or created.
+- Raise `ArgumentError` when a custom `:name` exceeds PostgreSQL's 63-character identifier
+  limit, instead of relying on the database to truncate it silently.
+
 ## [1.0.0] - 2026-05-31
 
 - Require Ruby >= 3.2 and support ActiveRecord 7.1 through 8.x (and pg >= 1.5).

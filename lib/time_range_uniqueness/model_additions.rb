@@ -70,15 +70,16 @@ module TimeRangeUniqueness
       time_range = record.public_send(time_range_column)
       return false if time_range.nil?
 
+      # A NULL scope value can never satisfy the exclusion constraint's `=` comparison,
+      # so such a record can never conflict at the database level. Mirror that here.
+      return false if scope_columns.any? { |col| record.public_send(col).nil? }
+
       column = record.class.connection.quote_column_name(time_range_column)
       bounds = time_range.exclude_end? ? '[)' : '[]'
 
-      scoped_relation(record, scope_columns).where(
-        "#{column} && tstzrange(?, ?, ?)",
-        time_range.begin,
-        time_range.end,
-        bounds
-      ).exists?
+      scoped_relation(record, scope_columns)
+        .where("#{column} && tstzrange(?, ?, ?)", time_range.begin, time_range.end, bounds)
+        .exists?
     end
 
     # Builds the set of other records to check against, optionally scoped by the given columns.
@@ -88,7 +89,10 @@ module TimeRangeUniqueness
     # @return [ActiveRecord::Relation] All other records, scoped by the given columns.
     def self.scoped_relation(record, scope_columns)
       klass = record.class
-      relation = klass.where.not(klass.primary_key => record.id)
+      # Pair each primary key column with its value so this works for both single
+      # and composite primary keys (record.id is an array for composite keys).
+      excluded = Array(klass.primary_key).zip(Array(record.id)).to_h
+      relation = klass.where.not(excluded)
 
       scope_columns.each do |col|
         relation = relation.where(col => record.public_send(col))

@@ -163,5 +163,13 @@ RSpec.describe TimeRangeUniqueness::MigrationAdditions, type: :migration do
 
       expect(name.length).to be <= 63
     end
+
+    it 'raises an ArgumentError when a custom :name exceeds the identifier limit' do
+      migration = Class.new(ActiveRecord::Migration[7.1]).new
+
+      expect do
+        migration.add_time_range_uniqueness(:events, with: :event_time_range, name: 'x' * 64)
+      end.to raise_error(ArgumentError, /limit/)
+    end
   end
 end
