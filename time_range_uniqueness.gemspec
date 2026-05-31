@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   # Metadata
   spec.metadata['source_code_uri'] = 'https://github.com/j-boers-13/time_range_uniqueness'
   spec.metadata['homepage_uri'] = 'https://github.com/j-boers-13/time_range_uniqueness'
-  spec.metadata['changelog_uri'] = 'https://github.com/j-boers-13/time_range_uniqueness/CHANGELOG.md'
+  spec.metadata['changelog_uri'] = 'https://github.com/j-boers-13/time_range_uniqueness/blob/main/CHANGELOG.md'
   spec.metadata['rubygems_mfa_required'] = 'true'
 
   # Specify which files should be added to the gem when it is released.

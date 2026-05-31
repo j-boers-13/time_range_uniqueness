@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [1.0.2] - 2026-05-31
+
+- Update the README to match the current behavior: document the Ruby >= 3.2 and
+  ActiveRecord >= 7.1 requirements, correct the migration example's version stamp, clarify
+  that `validates_time_range_uniqueness` is available on all models, and list the
+  validation/constraint behavior added in 1.0.0 and 1.0.1.
+
 ## [1.0.1] - 2026-05-31
 
 - Fix the overlap validation to treat a `NULL` scope value as never-conflicting, matching
