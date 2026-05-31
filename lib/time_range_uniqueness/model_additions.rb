@@ -4,8 +4,8 @@ module TimeRangeUniqueness
   # The `ModelAdditions` module provides a custom validation for ensuring that time ranges
   # in ActiveRecord models are unique across records, optionally scoped by other columns.
   #
-  # This module is intended to be included in ActiveRecord models and used to add
-  # validation methods to check for overlapping time ranges between records.
+  # This module is extended onto ActiveRecord::Base so that models gain a
+  # validation method to check for overlapping time ranges between records.
   #
   # == Example
   #
@@ -31,10 +31,10 @@ module TimeRangeUniqueness
   # == Methods
   #
   # * +validates_time_range_uniqueness+ - Adds a validation for time range uniqueness.
-  # * +validate_records+ - Internal method to perform the validation.
-  # * +time_range_column_overlapping?+ - Internal method to check for overlapping time ranges.
+  # * +ModelAdditions.overlapping?+ - Internal helper that checks for overlapping time ranges.
+  # * +ModelAdditions.scoped_relation+ - Internal helper that builds the scoped relation.
   #
-  # When included in an ActiveRecord model, this module adds the ability to ensure that
+  # Extending this onto ActiveRecord::Base adds the ability to ensure that
   # the specified time range does not overlap with other records' time ranges, optionally
   # scoped by additional fields.
   module ModelAdditions
@@ -52,53 +52,49 @@ module TimeRangeUniqueness
 
       time_range_column = options[:with]
       scope_columns = Array(options[:scope])
+      message = options[:message] || 'overlaps with an existing record'
 
-      validate_records(time_range_column, scope_columns, options)
-    end
-
-    private
-
-    # Defines the validation logic for ensuring time range uniqueness.
-    #
-    # This method is called internally by the validation and checks whether a record's
-    # time range overlaps with any other records, optionally scoped by other columns.
-    #
-    # @param time_range_column [Symbol] The name of the time range column.
-    # @param scope_columns [Array<Symbol>] The columns to scope the uniqueness check.
-    # @param options [Hash] The options for the validation.
-    def validate_records(time_range_column, scope_columns, options)
       validate do
-        time_range = public_send(time_range_column)
-
-        next if time_range.nil?
-
-        relation = self.class.where.not(id: id)
-
-        scope_columns.each do |col|
-          relation = relation.where(col => public_send(col))
-        end
-
-        overlapping = time_range_column_overlapping?(relation, time_range_column, time_range)
-
-        errors.add(time_range_column, options[:message] || 'overlaps with an existing record') if overlapping
+        overlapping = TimeRangeUniqueness::ModelAdditions.overlapping?(self, time_range_column, scope_columns)
+        errors.add(time_range_column, message) if overlapping
       end
     end
 
-    # Checks if the given time range overlaps with any existing records.
+    # Checks whether the record's time range overlaps any other record, optionally scoped.
     #
-    # This method performs the actual overlap check by querying the database using the
-    # GiST index for range data types in PostgreSQL.
-    #
-    # @param relation [ActiveRecord::Relation] The scope of records to check against.
+    # @param record [ActiveRecord::Base] The record being validated.
     # @param time_range_column [Symbol] The name of the time range column.
-    # @param time_range [Range] The time range to check for overlap.
+    # @param scope_columns [Array<Symbol>] The columns to scope the uniqueness check.
     # @return [Boolean] True if there is an overlap, false otherwise.
-    def time_range_column_overlapping?(relation, time_range_column, time_range)
-      relation.where(
-        "#{time_range_column} && tstzrange(?, ?, '[)')",
+    def self.overlapping?(record, time_range_column, scope_columns)
+      time_range = record.public_send(time_range_column)
+      return false if time_range.nil?
+
+      column = record.class.connection.quote_column_name(time_range_column)
+      bounds = time_range.exclude_end? ? '[)' : '[]'
+
+      scoped_relation(record, scope_columns).where(
+        "#{column} && tstzrange(?, ?, ?)",
         time_range.begin,
-        time_range.end
+        time_range.end,
+        bounds
       ).exists?
+    end
+
+    # Builds the set of other records to check against, optionally scoped by the given columns.
+    #
+    # @param record [ActiveRecord::Base] The record being validated.
+    # @param scope_columns [Array<Symbol>] The columns to scope the uniqueness check.
+    # @return [ActiveRecord::Relation] All other records, scoped by the given columns.
+    def self.scoped_relation(record, scope_columns)
+      klass = record.class
+      relation = klass.where.not(klass.primary_key => record.id)
+
+      scope_columns.each do |col|
+        relation = relation.where(col => record.public_send(col))
+      end
+
+      relation
     end
   end
 end

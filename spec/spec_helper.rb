@@ -7,7 +7,7 @@ require 'rspec'
 require 'time_range_uniqueness'
 
 # Load support files
-Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].sort.each { |f| require f }
+Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each { |f| require f }
 
 # Configure ActiveRecord to connect to a test database
 ActiveRecord::Base.establish_connection(

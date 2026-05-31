@@ -30,11 +30,11 @@ jobs:
 
     strategy:
       matrix:
-        ruby-version: [ 3.3 ] # Specify Ruby versions to test against
+        ruby-version: [ '3.2', '3.3', '3.4' ] # Specify Ruby versions to test against
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install packages
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client libpq-dev

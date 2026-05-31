@@ -45,4 +45,33 @@ RSpec.describe TimeRangeUniqueness::ModelAdditions do
       expect(overlapping_event.errors[:event_time_range]).to include('overlaps with an existing record')
     end
   end
+
+  context 'when ranges touch at an inclusive boundary' do
+    let(:event_name) { 'Boundary Event' }
+    let(:time_now) { Time.now }
+    let(:touching_event) do
+      DummyModel.new(
+        event_name: event_name,
+        event_time_range: (time_now - 1.hour)..time_now
+      )
+    end
+
+    before do
+      DummyModel.create!(event_name: event_name, event_time_range: time_now..(time_now + 1.hour))
+    end
+
+    after do
+      DummyModel.delete_all
+    end
+
+    it 'does not allow saving' do
+      expect(touching_event.save).to be_falsey
+    end
+
+    it 'generates an error on save' do
+      touching_event.save
+
+      expect(touching_event.errors[:event_time_range]).to include('overlaps with an existing record')
+    end
+  end
 end

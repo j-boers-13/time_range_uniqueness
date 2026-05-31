@@ -16,5 +16,4 @@ end
 
 ActiveSupport.on_load(:active_record) do
   ActiveRecord::Base.extend TimeRangeUniqueness::ModelAdditions
-  ActiveRecord::Base.include TimeRangeUniqueness::ModelAdditions
 end

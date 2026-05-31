@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'digest'
+
 module TimeRangeUniqueness
   # This module provides methods for adding and managing time range uniqueness
   # constraints in ActiveRecord migrations.
@@ -29,6 +31,11 @@ module TimeRangeUniqueness
   # * +add_time_range_uniqueness(table, options = {})+ - Adds the time range column and the exclusion constraint.
   # * +CommandRecorder+ - Records the `add_time_range_uniqueness` command so it can be replayed during rollback.
   module MigrationAdditions
+    COLUMN_TYPE = :tstzrange
+
+    # PostgreSQL truncates identifiers to 63 bytes (NAMEDATALEN - 1).
+    MAX_IDENTIFIER_LENGTH = 63
+
     # Adds a time range column and an exclusion constraint to the specified table.
     #
     # This method creates or modifies a column to store time ranges and ensures that
@@ -40,13 +47,14 @@ module TimeRangeUniqueness
     # @option options [Array<Symbol>] :scope (Optional) Columns to scope the uniqueness check.
     # @option options [String] :name (Optional) The name of the constraint.
     def add_time_range_uniqueness(table, options = {})
-      time_range_column = options[:with] || :time_range
+      raise ArgumentError, 'You must specify the :with option with the time range column name' unless options[:with]
+
+      time_range_column = options[:with]
       scope_columns = Array(options[:scope])
-      column_type = :tstzrange
       constraint_name = options[:name] || generate_constraint_name(table, scope_columns, time_range_column)
 
       reversible do |dir|
-        dir.up { apply_up_migration(table, time_range_column, column_type, options, constraint_name, scope_columns) }
+        dir.up { apply_up_migration(table, time_range_column, options, constraint_name, scope_columns) }
         dir.down { apply_down_migration(table, time_range_column, constraint_name) }
       end
     end
@@ -57,13 +65,12 @@ module TimeRangeUniqueness
     #
     # @param table [Symbol, String] The name of the table.
     # @param time_range_column [Symbol] The time range column name.
-    # @param column_type [Symbol] The type of the column.
     # @param options [Hash] Additional options for the column.
     # @param constraint_name [String] The name of the constraint.
     # @param scope_columns [Array<Symbol>] The columns used in the scope.
-    def apply_up_migration(table, time_range_column, column_type, options, constraint_name, scope_columns)
+    def apply_up_migration(table, time_range_column, options, constraint_name, scope_columns)
       setup_extension
-      add_column_to_table(table, time_range_column, column_type, options)
+      add_column_to_table(table, time_range_column, options)
       add_exclusion_constraint(table, constraint_name, scope_columns, time_range_column)
     end
 
@@ -84,7 +91,13 @@ module TimeRangeUniqueness
     # @param time_range_column [Symbol] The time range column name.
     # @return [String] The generated constraint name.
     def generate_constraint_name(table, scope_columns, time_range_column)
-      "exclude_#{table}_on_#{[scope_columns, time_range_column].flatten.join('_')}"
+      name = "exclude_#{table}_on_#{[scope_columns, time_range_column].flatten.join('_')}"
+      return name if name.length <= MAX_IDENTIFIER_LENGTH
+
+      # Keep the name deterministic and within PostgreSQL's limit so the up and down
+      # migrations refer to the same constraint. A digest avoids collisions after truncation.
+      digest = Digest::SHA256.hexdigest(name)[0, 10]
+      "#{name[0, MAX_IDENTIFIER_LENGTH - digest.length - 1]}_#{digest}"
     end
 
     # Ensures the btree_gist extension is enabled.
@@ -96,12 +109,11 @@ module TimeRangeUniqueness
     #
     # @param table [Symbol, String] The name of the table.
     # @param time_range_column [Symbol] The time range column name.
-    # @param column_type [Symbol] The type of the column.
     # @param options [Hash] Additional options for the column.
-    def add_column_to_table(table, time_range_column, column_type, options)
+    def add_column_to_table(table, time_range_column, options)
       return if column_exists?(table, time_range_column)
 
-      add_column table, time_range_column, column_type, **options.slice(:null, :default)
+      add_column table, time_range_column, COLUMN_TYPE, **options.slice(:null, :default)
     end
 
     # Adds an exclusion constraint to the table.
@@ -111,13 +123,13 @@ module TimeRangeUniqueness
     # @param scope_columns [Array<Symbol>] The columns used in the scope.
     # @param time_range_column [Symbol] The time range column name.
     def add_exclusion_constraint(table, constraint_name, scope_columns, time_range_column)
-      columns = scope_columns.map { |col| "#{col} WITH =" }
-      columns << "#{time_range_column} WITH &&"
+      columns = scope_columns.map { |col| "#{quote_column_name(col)} WITH =" }
+      columns << "#{quote_column_name(time_range_column)} WITH &&"
       expression = columns.join(', ')
 
       execute <<-SQL
-        ALTER TABLE #{table}
-        ADD CONSTRAINT #{constraint_name}
+        ALTER TABLE #{quote_table_name(table)}
+        ADD CONSTRAINT #{quote_column_name(constraint_name)}
         EXCLUDE USING GIST (#{expression});
       SQL
     end
@@ -128,8 +140,8 @@ module TimeRangeUniqueness
     # @param constraint_name [String] The name of the constraint.
     def remove_exclusion_constraint(table, constraint_name)
       execute <<-SQL
-        ALTER TABLE #{table}
-        DROP CONSTRAINT IF EXISTS #{constraint_name};
+        ALTER TABLE #{quote_table_name(table)}
+        DROP CONSTRAINT IF EXISTS #{quote_column_name(constraint_name)};
       SQL
     end
 

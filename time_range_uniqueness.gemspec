@@ -9,10 +9,15 @@ Gem::Specification.new do |spec|
   spec.email = ['jeroen.boers1@gmail.com']
 
   spec.summary = 'Easily set up time range uniqueness in Ruby On Rails.'
-  spec.description = 'This gem helps you easily set up time range uniqueness constraints in PostgreSQL using ActiveRecord migrations and validations. It ensures that time ranges do not overlap within a table, supporting optional scoping of uniqueness.'
+  spec.description = <<~DESC.tr("\n", ' ').strip
+    This gem helps you easily set up time range uniqueness constraints in
+    PostgreSQL using ActiveRecord migrations and validations. It ensures that
+    time ranges do not overlap within a table, supporting optional scoping of
+    uniqueness.
+  DESC
   spec.homepage = 'https://github.com/j-boers-13/time_range_uniqueness'
   spec.license = 'MIT'
-  spec.required_ruby_version = '>= 2.6.0'
+  spec.required_ruby_version = '>= 3.2.0'
 
   # Metadata
   spec.metadata['source_code_uri'] = 'https://github.com/j-boers-13/time_range_uniqueness'
@@ -34,14 +39,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   # Dependencies
-  spec.add_dependency 'activerecord', '>= 5.2', '< 8.0'
-  spec.add_dependency 'pg', '>= 0.18'
-
-  # Development dependencies
-  spec.add_development_dependency 'dotenv'
-  spec.add_development_dependency 'rake'
-  spec.add_development_dependency 'rspec'
-  spec.add_development_dependency 'rubocop'
-  spec.add_development_dependency 'rubocop-performance'
-  spec.add_development_dependency 'rubocop-rspec'
+  spec.add_dependency 'activerecord', '>= 7.1', '< 9.0'
+  spec.add_dependency 'pg', '>= 1.5'
 end

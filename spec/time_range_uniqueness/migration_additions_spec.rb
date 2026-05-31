@@ -148,4 +148,20 @@ RSpec.describe TimeRangeUniqueness::MigrationAdditions, type: :migration do
       end
     end
   end
+
+  describe 'option validation and identifier limits' do
+    it 'raises an ArgumentError when the :with option is omitted' do
+      migration = Class.new(ActiveRecord::Migration[7.1]).new
+
+      expect { migration.add_time_range_uniqueness(:events) }.to raise_error(ArgumentError, /:with/)
+    end
+
+    it 'keeps a generated constraint name within the PostgreSQL identifier limit' do
+      migration = Class.new(ActiveRecord::Migration[7.1]).new
+
+      name = migration.send(:generate_constraint_name, :events, [], ('a' * 80).to_sym)
+
+      expect(name.length).to be <= 63
+    end
+  end
 end
