@@ -11,6 +11,17 @@ It adds support for creating exclusion constraints on PostgreSQL `tstzrange` col
 - **Migration Additions**: Adds a custom method for generating exclusion constraints on time range columns in PostgreSQL using `tstzrange`.
 - **Model Additions**: Adds validation to ensure time ranges do not overlap with existing records.
 - Supports optional scoping to ensure time ranges are unique within specified contexts (e.g., unique per event name).
+- Honors the time range's bound inclusivity (`..` vs `...`) so the model validation agrees with the database-level exclusion constraint.
+- Treats a `NULL` scope value as never-conflicting, matching PostgreSQL's exclusion-constraint semantics (`NULL = NULL` is never true).
+- Works with models that use a composite primary key.
+- Keeps generated constraint names within PostgreSQL's 63-character identifier limit, and raises if a custom `:name` exceeds it.
+- Quotes table and column identifiers in the generated migration and validation SQL.
+
+## Requirements
+
+- Ruby >= 3.2
+- ActiveRecord >= 7.1, < 9.0
+- PostgreSQL with the `btree_gist` extension available
 
 ## Installation
 
@@ -46,7 +57,7 @@ In your migrations, you can use the `add_time_range_uniqueness` method to add a 
 ### Example
 
 ```ruby
-class AddEventTimeRangeUniqueness < ActiveRecord::Migration[6.1]
+class AddEventTimeRangeUniqueness < ActiveRecord::Migration[7.1]
   def change
     add_time_range_uniqueness :events,
                               with: :event_time_range,
@@ -60,7 +71,7 @@ This example ensures that the `event_time_range` column in the `events` table is
 
 ### Model Additions
 
-The gem also provides model-level validation to ensure time ranges do not overlap. You can include this validation in your models like this:
+The gem also provides model-level validation to ensure time ranges do not overlap. The `validates_time_range_uniqueness` class method is available on all ActiveRecord models, so you can declare it directly in your model like this:
 
 #### Options:
 - `with`: **(Required)** The name of the time range column to validate.
