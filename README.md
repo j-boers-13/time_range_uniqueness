@@ -4,6 +4,7 @@
 
 It adds support for creating exclusion constraints on PostgreSQL `tstzrange` columns and validates the uniqueness of time ranges in models.
 
+[![Gem Version](https://badge.fury.io/rb/time_range_uniqueness.svg?icon=si%3Arubygems)](https://badge.fury.io/rb/time_range_uniqueness)
 [![rspec](https://github.com/j-boers-13/time_range_uniqueness/actions/workflows/ci.yml/badge.svg)](https://github.com/j-boers-13/time_range_uniqueness/actions/workflows/ci.yml)
 
 ## Features
