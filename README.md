@@ -13,6 +13,7 @@ It adds support for creating exclusion constraints on PostgreSQL `tstzrange` col
 - **Model Additions**: Adds validation to ensure time ranges do not overlap with existing records.
 - Supports optional scoping to ensure time ranges are unique within specified contexts (e.g., unique per event name).
 - Honors the time range's bound inclusivity (`..` vs `...`) so the model validation agrees with the database-level exclusion constraint.
+- Translates a database-level exclusion-constraint violation (e.g. from a concurrent write or `save(validate: false)`) into a validation error instead of an unhandled exception.
 - Treats a `NULL` scope value as never-conflicting, matching PostgreSQL's exclusion-constraint semantics (`NULL = NULL` is never true).
 - Works with models that use a composite primary key.
 - Keeps generated constraint names within PostgreSQL's 63-character identifier limit, and raises if a custom `:name` exceeds it.

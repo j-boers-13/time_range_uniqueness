@@ -13,6 +13,8 @@ Style/Documentation:
       - Exclude
   Exclude:
     - lib/time_range_uniqueness.rb
+    - lib/time_range_uniqueness/constraint_naming.rb
+    - lib/time_range_uniqueness/model_additions.rb
 
 RSpec/BeforeAfterAll:
   Enabled: false

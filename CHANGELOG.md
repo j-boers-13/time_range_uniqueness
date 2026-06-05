@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [1.0.3] - 2026-06-05
+
+- Translate the database-level exclusion-constraint violation into a validation error instead of
+  letting it surface as an unhandled `ActiveRecord::StatementInvalid`. This closes the gap left by
+  the model validation's check-then-insert: a conflict introduced by a concurrent write or by
+  `save(validate: false)` now adds the overlap error to the time range column (`save` returns
+  `false`, `save!` raises `ActiveRecord::RecordInvalid`). Unrelated database errors still propagate.
+- Run the test suite against ActiveRecord 7.1, 7.2, and 8.0 in CI to back the supported version range.
+
 ## [1.0.2] - 2026-05-31
 
 - Update the README to match the current behavior: document the Ruby >= 3.2 and

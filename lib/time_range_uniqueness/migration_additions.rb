@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'digest'
-
 module TimeRangeUniqueness
   # This module provides methods for adding and managing time range uniqueness
   # constraints in ActiveRecord migrations.
@@ -34,7 +32,7 @@ module TimeRangeUniqueness
     COLUMN_TYPE = :tstzrange
 
     # PostgreSQL truncates identifiers to 63 bytes (NAMEDATALEN - 1).
-    MAX_IDENTIFIER_LENGTH = 63
+    MAX_IDENTIFIER_LENGTH = TimeRangeUniqueness::MAX_IDENTIFIER_LENGTH
 
     # Adds a time range column and an exclusion constraint to the specified table.
     #
@@ -104,13 +102,7 @@ module TimeRangeUniqueness
     # @param time_range_column [Symbol] The time range column name.
     # @return [String] The generated constraint name.
     def generate_constraint_name(table, scope_columns, time_range_column)
-      name = "exclude_#{table}_on_#{[scope_columns, time_range_column].flatten.join('_')}"
-      return name if name.length <= MAX_IDENTIFIER_LENGTH
-
-      # Keep the name deterministic and within PostgreSQL's limit so the up and down
-      # migrations refer to the same constraint. A digest avoids collisions after truncation.
-      digest = Digest::SHA256.hexdigest(name)[0, 10]
-      "#{name[0, MAX_IDENTIFIER_LENGTH - digest.length - 1]}_#{digest}"
+      TimeRangeUniqueness::ConstraintNaming.default_constraint_name(table, scope_columns, time_range_column)
     end
 
     # Ensures the btree_gist extension is enabled.

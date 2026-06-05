@@ -2,6 +2,7 @@
 
 require_relative 'time_range_uniqueness/version'
 require 'active_record'
+require_relative 'time_range_uniqueness/constraint_naming'
 require_relative 'time_range_uniqueness/migration_additions'
 require_relative 'time_range_uniqueness/model_additions'
 

@@ -22,15 +22,22 @@ jobs:
 
         options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { ruby-version: '3.2', activerecord-version: '7.1' }
+          - { ruby-version: '3.2', activerecord-version: '7.2' }
+          - { ruby-version: '3.3', activerecord-version: '7.2' }
+          - { ruby-version: '3.3', activerecord-version: '8.0' }
+          - { ruby-version: '3.4', activerecord-version: '8.0' }
+
     env:
       DB_NAME: time_range_uniqueness_test
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_HOST: localhost
-
-    strategy:
-      matrix:
-        ruby-version: [ '3.2', '3.3', '3.4' ] # Specify Ruby versions to test against
+      ACTIVERECORD_VERSION: ${{ matrix.activerecord-version }}
 
     steps:
       - name: Checkout repository
@@ -43,11 +50,12 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
-          bundler-cache: true
+          bundler-cache: false
 
       - name: Install dependencies
         run: |
           gem install bundler
+          rm -f Gemfile.lock
           bundle install --jobs 4 --retry 3
 
       - name: Wait for PostgreSQL to be ready

@@ -54,9 +54,73 @@ module TimeRangeUniqueness
       scope_columns = Array(options[:scope])
       message = options[:message] || 'overlaps with an existing record'
 
+      TimeRangeUniqueness::ModelAdditions.register_constraint(self, time_range_column, scope_columns, message,
+                                                              options[:name])
+
       validate do
         overlapping = TimeRangeUniqueness::ModelAdditions.overlapping?(self, time_range_column, scope_columns)
         errors.add(time_range_column, message) if overlapping
+      end
+    end
+
+    def self.register_constraint(model, time_range_column, scope_columns, message, name)
+      unless model.respond_to?(:time_range_uniqueness_constraints)
+        model.class_attribute :time_range_uniqueness_constraints, instance_accessor: false, default: []
+        model.prepend(ViolationHandling)
+      end
+
+      model.time_range_uniqueness_constraints += [
+        { column: time_range_column, scope_columns: scope_columns, message: message, name: name }
+      ]
+    end
+
+    def self.violation_constraint_name(error)
+      cause = error.cause
+      return nil unless defined?(PG::ExclusionViolation) && cause.is_a?(PG::ExclusionViolation)
+
+      result = cause.respond_to?(:result) ? cause.result : nil
+      result&.error_field(PG::Result::PG_DIAG_CONSTRAINT_NAME)
+    end
+
+    def self.constraint_name_for(model, config)
+      return config[:name].to_s if config[:name]
+
+      TimeRangeUniqueness::ConstraintNaming.default_constraint_name(
+        model.table_name, config[:scope_columns], config[:column]
+      )
+    end
+
+    def self.matched_constraint(record, error)
+      name = violation_constraint_name(error)
+      return unless name
+
+      record.class.time_range_uniqueness_constraints.find do |config|
+        constraint_name_for(record.class, config) == name
+      end
+    end
+
+    module ViolationHandling
+      def save(...)
+        super
+      rescue ActiveRecord::StatementInvalid => e
+        apply_time_range_uniqueness_error(e)
+        false
+      end
+
+      def save!(...)
+        super
+      rescue ActiveRecord::StatementInvalid => e
+        apply_time_range_uniqueness_error(e)
+        raise ActiveRecord::RecordInvalid, self
+      end
+
+      private
+
+      def apply_time_range_uniqueness_error(error)
+        config = TimeRangeUniqueness::ModelAdditions.matched_constraint(self, error)
+        raise error unless config
+
+        errors.add(config[:column], config[:message])
       end
     end
 
